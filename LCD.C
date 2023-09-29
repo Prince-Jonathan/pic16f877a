@@ -19,8 +19,12 @@ __CONFIG(FOSC_HS & WDTE_OFF & PWRTE_OFF & LVP_OFF & CP_OFF); //use for XC8 or Hi
 #endif
 
 long unsigned int ADC_Reading; 	//declaring 4 byte memory allocation for ADC reading
-unsigned char TMP @ 0X30, TMP2 @ 0X31, TMP3 @ 0X32, TMP4 @ 0X33, TMP5 @ 0X34, TMP6 @0X111, TMP7 @ 0XC4;		//6 bit precision for reading on LCD
-unsigned char *ptr = &TMP;
+unsigned char word_bit_5;		//6 bit precision for reading on LCD
+unsigned char word_bit_4;
+unsigned char word_bit_3;
+unsigned char word_bit_2;
+unsigned char word_bit_1;
+unsigned char word_bit_0;
 unsigned char i;				//iterator variable
 
 // toggles the enable bit on to send command or data
@@ -87,38 +91,36 @@ void lcd_init()
 	}
 
 void BCD_conv(long unsigned int hex_code){
-	//reset word_bits					
-	for (i=0; i<6;i++){
-		ptr[i] = 0x0;
-	}
+	word_bit_5 = 0x0;					//reset word_bits
+	word_bit_4 = 0x0;
+	word_bit_3 = 0x0;
+	word_bit_2 = 0x0;
+	word_bit_1 = 0x0;
+	word_bit_0 = 0x0;
+	//convert hex code to binary digits in hex format. Subtract 100,000, 10,000, 1000, 100 and then 10
 	while (hex_code >= 0XA){
-		//subtract 100,000 from hex code
 		if (hex_code >= 0X186A0){
-			hex_code -= 0X186A0; //increment 5th bit on every subtraction by 100,000 decimal
-			ptr[0]++;
+			hex_code -= 0X186A0;		//subtract 100,000 from hex code
+			word_bit_5++;				//increment 5th bit on every subtraction by 100,000 decimal
 		}
-		//subtract 10,000 from hex code
 		else if (hex_code >= 0X2710){
 			hex_code -= 0X2710;
-			ptr[1]++;
+			word_bit_4++;
 		}
-		//subtract 1,000 from hex code
 		else if (hex_code >= 0X3E8){
 			hex_code -= 0X3E8;
-			ptr[2]++;
+			word_bit_3++;
 		}
-		//subtract 100 from hex code
 		else if (hex_code >= 0X64){
 			hex_code -= 0X64;
-			ptr[3]++;
+			word_bit_2++;
 		}
-		//subtract 10 from hex code
 		else if (hex_code >= 0XA){
 			hex_code -= 0XA;
-			ptr[4]++;
+			word_bit_1++;
 		}
 	}	
-	ptr[5] = hex_code ; //conserve remainder as final value to 10 decimal word
+	word_bit_0 = hex_code; 				//conserve remainder as final value to 10 decimal word
 }
 
 //custom multiplication function
@@ -173,15 +175,15 @@ void main(void)
 		BCD_conv(ADC_Reading*0X1E9);			//Convert ADC reading to decimal bits. Multiply conversion value by 100,000 = 186A0
 	
 		//display ADC readings in decimal
-		for (i = 0; i < 6; i++){
-			lcd_putch(ASCII(ptr[i]));
-			if (i == 0){
-				lcd_putch(0x2E);			//display decimal point
-			}	
-		}
+		lcd_putch(ASCII(word_bit_5));			
+		lcd_putch(0x2E);						//display decimal point
+		lcd_putch(ASCII(word_bit_4));
+		lcd_putch(ASCII(word_bit_3));
+		lcd_putch(ASCII(word_bit_2));
+		lcd_putch(ASCII(word_bit_1));
+		lcd_putch(ASCII(word_bit_0));
+		//lcd_putch(ASCII(BCD_conv(div(mult(ADC_Reading,0x05),0X3FF))));	
 		lcd_putch(0X56);						//append 'V'
-		//lcd_putch(ASCII(BCD_conv(div(mult(mult(ADC_Reading,0x05), 0X186A0),0X3FF))));	
-		
 	}
 
 //	for(;;);				//prevent program from terminating
