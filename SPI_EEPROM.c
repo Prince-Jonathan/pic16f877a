@@ -23,6 +23,13 @@ __CONFIG(FOSC_HS & WDTE_OFF & PWRTE_OFF & LVP_OFF & CP_OFF); //use for XC8 or Hi
 long unsigned int ADC_Reading; 	//declaring 4 byte memory allocation for ADC reading
 unsigned char *ptr;
 unsigned char *ptr2;
+unsigned char mcu_start;						//store the next byte start address in MCU
+unsigned char ee_start;							//EEPROM starting address for storage
+unsigned char num_readings;						//number of analogue readings to sample
+unsigned char total_bytes;		//total number of bytes to be stored: is a multiple of the number of digits from the BCD conversion
+unsigned char ee_end;	//last address in the EEPROM to be accessed for storing readings
+unsigned char num_page1_writes;					//number of writes within inital EEPROM Page
+unsigned char num_page2_writes; 				//number of writes within next EEPROM page where there is an overflow to next page
 
 // toggles the enable bit on to send command or data
 void toggle_e()
@@ -298,30 +305,17 @@ void main(void)
 	SSPCON = 0x32;			//set SPI Master Mode, clock = Fosc/64, set clock idle state to high
 	TRISC = 0x10;			//configure RC2,RC3 and RC5 as output for chip select, clock and serial data output, respectively and configure RC4 as serial data input
 
-/*
-	/*----alternative configuration syntax----*/
-	SSPM3:SSPM0 = 0X0010;	//configure SPI Master Mode, clock = Fosc/16
-	//configure 1,1 SPI Mode
-	CKE = 0;	//set transmit to occur on transition from idle to active clock state
-	CKP = 1;	//set  idle state for clock to a high level
-	
-	SMP = 0;	//set input data sampling at middle of data output time
-	SSPEN = 1; //enable SPI Port and configure SCK, SDO, SDI and nSS as serial port pins	
-*/
 	/*
 	read mode: RD0 = 0;
 	write mode: RD0 = 1;
 	*/
 	TRISD = 1;				//configure pin 0 of PORT D as input for toggling between read and write modes				
 
-	unsigned char mcu_start;						//store the next byte start address in MCU
-	unsigned char ee_start = 0x7FBA;				//EEPROM starting address for storage
-	unsigned char num_readings = 0xA;				//number of analogue readings to sample
-	unsigned char total_bytes = num_readings*4;		//total number of bytes to be stored: is a multiple of the number of digits from the BCD conversion
-	unsigned char ee_end = ee_start + total_bytes;	//last address in the EEPROM to be accessed for storing readings
-	unsigned char num_page1_writes;					//number of writes within inital EEPROM Page
-	unsigned char num_page2_writes; 				//number of writes within next EEPROM page where there is an overflow to next page
-	
+	ee_start = 0x7FBA;				//EEPROM starting address for storage
+	num_readings = 0xA;				//number of analogue readings to sample
+	total_bytes = num_readings*4;		//total number of bytes to be stored: is a multiple of the number of digits from the BCD conversion
+	ee_end = ee_start + total_bytes;	//last address in the EEPROM to be accessed for storing readings
+
 	switch(RD0){
 	case 0:
 		lcd_clear();
