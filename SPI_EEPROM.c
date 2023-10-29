@@ -87,7 +87,7 @@ void lcd_init()
 		lcd_write(0X30);	
 		lcd_write(0X30);
 		lcd_write(0X30);
-		lcd_write(0X38);	//2 lines and 5×7 matrix
+		lcd_write(0X38);	//2 lines and 5ï¿½7 matrix
 		lcd_write(0X0C);	//Display on, cursor off
 		lcd_write(0X01);	//Clear display
 		lcd_write(0X06);	//Sets Entry Mode to auto-increment cursor and disable shift mode
@@ -368,9 +368,9 @@ void main(void)
 		while(1){
 			lcd_goto(0);
 			lcd_puts("Retrieved Voltages:     ");
+			read_eebytes(ee_start, ee_start+total_bytes);	//providing EE start and end address reads from EEPROM
 			for(unsigned char i=0; i<num_readings; i++){
-				unsigned int _start = ee_start + i*4; 		//initialize 
-				read_eebytes(_start, _start+3);				//providing EE start and end address reads from EEPROM
+				mcu_start = 4*i;
 				//show next page of display on LCD 
 				if(i==8){
 					__delay_ms(2000);
@@ -378,7 +378,7 @@ void main(void)
 					lcd_puts("Retrieved Voltages:     ");
 				}
 				for (unsigned char j=0; j<4; j++){
-					lcd_putch(ASCII(ptr[j]));	//display digits of ADC reading
+					lcd_putch(ASCII(ptr[mcu_start+j]));	//display digits of ADC reading
 					if (j == 0){
 						lcd_putch(0x2E);		//display decimal point
 					}					
