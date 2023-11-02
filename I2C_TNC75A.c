@@ -599,6 +599,7 @@ void main(void)
 	lcd_init();
 	unsigned char high_byte;
 	unsigned char low_byte;
+	unsigned int _low_byte;
 	unsigned char sign_;
 	unsigned char mcu_start;						//store the next byte start address in MCU
 	unsigned char num_readings = 0xA;				//number of analogue readings to sample
@@ -672,7 +673,24 @@ void main(void)
 
 				//convert high byte and low byte to decimal equivalent
 				BCD_conv(high_byte, mcu_start);				//convert high_byte to decimal
-				BCD_conv((low_byte*0x4)-0xC, mcu_start+3);	//multiply decimal code by 1000 and then divide by 256 and convert to decimal digits
+
+				//process low_byte for decimal values
+				_low_byte = 0;
+				if(low_byte){
+					if(low_byte>>7){
+						//add 500
+						_low_byte += 0x1F4;
+					}
+					if((low_byte>>6) & 1){
+						//add 250
+						_low_byte += 0xFA;
+					}
+					if((low_byte>>5) & 1){
+						//add 125
+						_low_byte += 0x7D;
+					}
+				}
+				BCD_conv(_low_byte, mcu_start+3);	//multiply decimal code by 1000 and then divide by 256 and convert to decimal digits
 				
 				//format LCD display of readings
 				if (ptr[mcu_start]!=0){
